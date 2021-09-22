@@ -189,4 +189,19 @@ public class CT_CommonData extends OFDElement {
     public ST_RefID getDefaultCS() {
         return ST_RefID.getInstance(this.getOFDElementText("DefaultCS"));
     }
+
+    /**
+     * 获取 公共资源序列 列表
+     * @return 公共资源序列路径列表
+     */
+    public List<ST_Loc> getPublicResList() {
+        List<ST_Loc> st_locs = new ArrayList<>();
+        List<Element> elements = this.proxy.elements();
+        for (Element element : elements) {
+            if ("PublicRes".equals(element.getName())) {
+                st_locs.add(ST_Loc.getInstance(element));
+            }
+        }
+        return st_locs;
+    }
 }

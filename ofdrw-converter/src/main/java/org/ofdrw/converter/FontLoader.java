@@ -172,7 +172,7 @@ public final class FontLoader {
         String key1 = familyName + Separator + fontName;
         String key2 = aliasFamilyName + Separator + aliasFontName;
         if (nameMapping.get(key2) == null || pathMapping.get(key2) == null) {
-            log.info("字体别名 [{} {}] -> [{} {}] 不存在", familyName, fontName, aliasFamilyName, aliasFontName);
+            log.warn("字体别名 [{} {}] -> [{} {}] 不存在", familyName, fontName, aliasFamilyName, aliasFontName);
             return this;
         }
         aliasMapping.put(key1, key2);
@@ -406,15 +406,19 @@ public final class FontLoader {
             if (fontFileLoc != null) {
                 // 通过资源加载器获取文件的绝对路径
                 String fontAbsPath = rl.getFile(ctFont.getFontFile()).toAbsolutePath().toString();
-                trueTypeFont = loadExternalFont(fontAbsPath, ctFont.getFamilyName(), ctFont.getFontName());
+                String familyName = ctFont.getFamilyName();
+                String fontName = ctFont.getFontName();
+                trueTypeFont = loadExternalFont(fontAbsPath, familyName, fontName);
             }
             CmapLookup cmapLookup = null;
             try {
                 cmapLookup = trueTypeFont.getUnicodeCmapLookup();
             } catch (Exception ignore) {
+                log.warn(ignore.getMessage());
             }
             boolean hasReplace = false;
-            if (trueTypeFont == null || trueTypeFont.getName() == null || cmapLookup == null) {
+            //解决加载第三方字体文件时，内容存在，可是名称无法获取导致加载本地或相似的字体文件，转换文件字体内容异常
+            if (trueTypeFont == null && cmapLookup == null) {
                 trueTypeFont = loadSystemFont(ctFont.getFamilyName(), ctFont.getFontName());
 
                 if (trueTypeFont == null && enableSimilarFontReplace) {
@@ -519,12 +523,11 @@ public final class FontLoader {
         if (fontAbsPath == null) {
             return null;
         }
-        FontProgram fontProgram = null;
+        FontProgram fontProgram;
         final String fileName = fontAbsPath.toLowerCase();
-        // 统一读取到内存防止因为 FontProgram 解析异常关闭导致无法删除临时OFD文件的问题。
-        byte[] fontRaw = new byte[0];
         try {
-            fontRaw = Files.readAllBytes(Paths.get(fontAbsPath));
+            // 统一读取到内存防止因为 FontProgram 解析异常关闭导致无法删除临时OFD文件的问题。
+            byte[] fontRaw = Files.readAllBytes(Paths.get(fontAbsPath));
 
             if (fileName.endsWith(".ttc")) {
                 fontProgram = FontProgramFactory.createFont(fontRaw, 0, false);
@@ -617,7 +620,7 @@ public final class FontLoader {
                     break;
             }
         } catch (Exception e) {
-            log.info("字体无法解析，跳过 " + file.getAbsolutePath());
+            log.warn("字体无法解析，跳过 " + file.getAbsolutePath());
         }
     }
 

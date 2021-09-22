@@ -1,7 +1,8 @@
 package org.ofdrw.converter;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 
 import org.ofdrw.converter.utils.CommonUtil;
 import org.ofdrw.core.basicType.ST_Box;
@@ -64,7 +65,8 @@ public class ImageMaker extends AWTMaker {
 
         BufferedImage image = createImage(pageWidthPixel, pageHeightPixel);
         Graphics2D graphics = (Graphics2D) image.getGraphics();
-
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,RenderingHints.VALUE_STROKE_DEFAULT);
         writePage(graphics, pageInfo, null);
 
         return image;
@@ -78,5 +80,34 @@ public class ImageMaker extends AWTMaker {
      */
     private BufferedImage createImage(int pageWidthPixel, int pageHeightPixel) {
         return ImageUtils.createImage(pageWidthPixel, pageHeightPixel, isStamp);
+    }
+
+    /**
+     * 渲染OFD页面为图片字节数组
+     *
+     * @param pageIndex 页码，从0起
+     * @param type 图片类型，jpg,png,...
+     * @return 渲染完成的图片字节数组
+     */
+    public byte[] makePage(int pageIndex, String type) throws IOException {
+        if (pageIndex < 0 || pageIndex >= pages.size()) {
+            throw new GeneralConvertException(String.format("%s 不是有效索引", pageIndex));
+        }
+        PageInfo pageInfo = pages.get(pageIndex);
+        ST_Box pageBox = pageInfo.getSize();
+
+        // PPM 转 像素
+        int pageWidthPixel = (int) Math.round(ppm * pageBox.getWidth());
+        int pageHeightPixel = (int) Math.round(ppm * pageBox.getHeight());
+
+        BufferedImage image = createImage(pageWidthPixel, pageHeightPixel);
+        Graphics2D graphics = (Graphics2D) image.getGraphics();
+        //消除文字锯齿
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        //消除画图锯
+        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,RenderingHints.VALUE_STROKE_DEFAULT);
+        writePage(graphics, pageInfo, null);
+
+        return ImageUtils.toBytes(image, type);
     }
 }

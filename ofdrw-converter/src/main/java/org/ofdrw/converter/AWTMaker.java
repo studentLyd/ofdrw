@@ -419,7 +419,7 @@ public abstract class AWTMaker {
         List<Number> fontMatrix = null;
 
         if (typeFont == null) {
-            logger.info("无法加载字体ID：" + textObject.getFont());
+            logger.warn("无法加载字体ID：" + textObject.getFont());
 //            typeFont = FontLoader.getInstance().loadDefaultFont();
             return;
         } else {
@@ -442,9 +442,7 @@ public abstract class AWTMaker {
                     transform.setCodePosition(0);
                 }
             });
-            transforms.sort((t1, t2) -> {
-                return t1.getCodePosition() - t2.getCodePosition();
-            });
+            transforms.sort(Comparator.comparingInt(CT_CGTransform::getCodePosition));
         }
         for (TextCode textCode : textObject.getTextCodes()) {
             int deltaOffset = -1;
@@ -497,7 +495,6 @@ public abstract class AWTMaker {
                         }
                         logger.debug(String.format("字形索引 <%s> DeltaX:%s DeltaY:%s", glyph, x, y));
                         try {
-//                            typeFont.getGlyph().getGlyphs();
                             GlyphData glyphData = typeFont.getGlyph().getGlyph(glyph);
                             if (glyphData != null) {
                                 Shape shape = glyphData.getPath();
@@ -514,8 +511,9 @@ public abstract class AWTMaker {
                     } else {
                         transPoint++;
                     }
-                    globalPoint += (transform.getCodeCount() != null ? transform.getCodeCount() : glyphs.size());
-                    j += (transform.getCodeCount() != null ? transform.getCodeCount() : glyphs.size());
+                    int codeCount = (transform.getCodeCount() != null ? transform.getCodeCount() : glyphs.size());
+                    globalPoint += codeCount;
+                    j += codeCount;
                 }
 
             }
@@ -547,7 +545,9 @@ public abstract class AWTMaker {
     }
 
     private void renderChar(Graphics2D graphics, Shape shape, Matrix m, Color stroke, Color fill) {
-        if (shape == null) return;
+        if (shape == null) {
+            return;
+        }
         graphics.setClip(null);
         graphics.setTransform(MatrixUtils.createAffineTransform(m));
 //        graphics.setStroke(new BasicStroke(0.1f));
@@ -698,7 +698,6 @@ public abstract class AWTMaker {
         if (ctColor == null) return null;
         ST_Array array = ctColor.getValue();
 
-
         OFDColorSpaceType type = OFDColorSpaceType.RGB;
         ST_RefID refID = ctColor.getColorSpace();
         CT_ColorSpace ctColorSpace = null;
@@ -746,7 +745,6 @@ public abstract class AWTMaker {
         List<Double> arr = new ArrayList<>();
 
         int i = 0;
-        int counter = 0;
         while (i < array.size()) {
             String current = array.getArray().get(i);
             if ("g".equals(current)) {
@@ -754,13 +752,11 @@ public abstract class AWTMaker {
                 Double delta = Double.valueOf(array.getArray().get(i + 2));
                 for (int j = 1; j <= num; j++) {
                     arr.add(delta);
-                    counter++;
                 }
                 i += 3;
             } else {
                 Double delta = Double.valueOf(current);
                 arr.add(delta);
-                counter++;
                 i++;
             }
 
