@@ -1,6 +1,7 @@
 import org.junit.jupiter.api.Test;
 import org.ofdrw.converter.FontLoader;
 import org.ofdrw.converter.ImageMaker;
+import org.ofdrw.converter.utils.CommonUtil;
 import org.ofdrw.reader.DLOFDReader;
 import org.ofdrw.reader.OFDReader;
 
@@ -33,7 +34,7 @@ public class OFD2IMGTest {
 //        toPng("src/test/resources/z.ofd", "target/z.ofd");
 //        toPng("src/test/resources/不规范资源路径.ofd", "target/不规范资源路径.ofd");
 //        toPng("src/test/resources/V4RideRight.ofd", "target/V4RideRight.ofd");
-        toPng("src/test/resources/发票示例.ofd", "target/发票示例.ofd");
+        toPng("C:\\Users\\Administrator\\Desktop\\ofd\\取水许可证 示例文件.ofd", "target/取水许可证 示例文件.ofd");
 
         System.out.printf(">> 总计花费: %dms\n", System.currentTimeMillis() - start);
     }
@@ -43,15 +44,13 @@ public class OFD2IMGTest {
         Path src = Paths.get(filename);
 
         try(OFDReader reader = new OFDReader(src);){
-            ImageMaker imageMaker = new ImageMaker(reader, 15);
+            ImageMaker imageMaker = new ImageMaker(reader, CommonUtil.dpiToPpm(150));
             imageMaker.config.setDrawBoundary(false);
             for (int i = 0; i < imageMaker.pageSize(); i++) {
                 BufferedImage image = imageMaker.makePage(i);
-                Path dist = Paths.get(dirPath, i + ".png");
-                ImageIO.write(image, "PNG", dist.toFile());
+                Path dist = Paths.get(dirPath, i + ".JPG");
+                ImageIO.write(image, "JPG", dist.toFile());
             }
         }
-
     }
-
 }

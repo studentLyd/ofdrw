@@ -440,11 +440,22 @@ public class ResourceManage {
 
             commonData = new CT_CommonData((Element) document.getCommonData().clone());
             // 公共资源序列（PublicRes）
-            loadResFile(rl, commonData.getPublicRes());
+            loadResFile(rl, commonData.getPublicResList());
             // 文档资源序列（DocumentRes）
             loadResFile(rl, commonData.getDocumentRes());
         } finally {
             rl.restore();
+        }
+    }
+
+    /**
+     * 加载资源文件列表中描述的资源对象
+     * @param r1 资源加载器
+     * @param resLocList 资源文件列表位置
+     */
+    private void loadResFile(ResourceLocator r1, List<ST_Loc> resLocList){
+        for(ST_Loc stLoc : resLocList){
+            this.loadResFile(r1, stLoc);
         }
     }
 
