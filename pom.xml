@@ -63,14 +63,14 @@
 
     <distributionManagement>
         <repository>
-            <id>sonatype</id>
+            <id>3rd</id>
             <name>Release Deploy</name>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+            <url>http://192.168.203.132:8081/repository/3rd/</url>
         </repository>
         <snapshotRepository>
-            <id>sonatype</id>
+            <id>3rd</id>
             <name>Snapshot Deploy</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+            <url>http://192.168.203.132:8081/repository/3rd/</url>
         </snapshotRepository>
     </distributionManagement>
 

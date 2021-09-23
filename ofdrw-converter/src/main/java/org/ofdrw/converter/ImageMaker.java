@@ -1,14 +1,19 @@
 package org.ofdrw.converter;
 
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-
 import org.ofdrw.converter.utils.CommonUtil;
 import org.ofdrw.core.basicType.ST_Box;
 import org.ofdrw.reader.OFDReader;
 import org.ofdrw.reader.PageInfo;
 import org.ofdrw.reader.tools.ImageUtils;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.zip.Deflater;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /**
  * 图片转换类
@@ -66,7 +71,7 @@ public class ImageMaker extends AWTMaker {
         BufferedImage image = createImage(pageWidthPixel, pageHeightPixel);
         Graphics2D graphics = (Graphics2D) image.getGraphics();
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,RenderingHints.VALUE_STROKE_DEFAULT);
+        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_DEFAULT);
         writePage(graphics, pageInfo, null);
 
         return image;
@@ -86,7 +91,7 @@ public class ImageMaker extends AWTMaker {
      * 渲染OFD页面为图片字节数组
      *
      * @param pageIndex 页码，从0起
-     * @param type 图片类型，jpg,png,...
+     * @param type      图片类型，jpg,png,...
      * @return 渲染完成的图片字节数组
      */
     public byte[] makePage(int pageIndex, String type) throws IOException {
@@ -105,9 +110,43 @@ public class ImageMaker extends AWTMaker {
         //消除文字锯齿
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         //消除画图锯
-        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,RenderingHints.VALUE_STROKE_DEFAULT);
+        graphics.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_DEFAULT);
         writePage(graphics, pageInfo, null);
 
         return ImageUtils.toBytes(image, type);
+    }
+
+    /**
+     * 渲染OFD页面为图片压缩包字节数组
+     *
+     * @param convertExt 图片转换后缀
+     * @return
+     * @throws IOException
+     */
+    public byte[] makePageZip(String convertExt) throws IOException {
+        try (ByteArrayOutputStream bao = new ByteArrayOutputStream()) {
+            String dirPath = "dzzzlyd" + System.currentTimeMillis();
+            try (//生成ZipOutputStream，会把压缩的内容全都通过这个输出流输出
+                 ZipOutputStream zipOut = new ZipOutputStream(bao)) {
+                //设置压缩的注释
+                zipOut.setComment("comment");
+                //启用压缩
+                zipOut.setMethod(ZipOutputStream.DEFLATED);
+                //压缩级别为最强压缩，但时间要花得多一点
+                zipOut.setLevel(Deflater.BEST_COMPRESSION);
+                //只是放入了空目录的名字
+                zipOut.putNextEntry(new ZipEntry(dirPath + File.separator));
+                zipOut.flush();
+                for (int i = 0; i < this.pageSize(); i++) {
+                    byte[] imageBytes = this.makePage(i, convertExt);
+                    //放入一个ZipEntry
+                    zipOut.putNextEntry(new ZipEntry(dirPath + File.separator + i + "." + convertExt));
+                    zipOut.write(imageBytes);
+                    zipOut.flush();
+                }
+            }
+            byte[] zipBytes = bao.toByteArray();
+            return zipBytes;
+        }
     }
 }
